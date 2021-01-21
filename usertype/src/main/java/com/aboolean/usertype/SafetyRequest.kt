@@ -1,4 +1,4 @@
-package com.aboolean.safety
+package com.aboolean.usertype
 
 import com.google.gson.annotations.SerializedName
 

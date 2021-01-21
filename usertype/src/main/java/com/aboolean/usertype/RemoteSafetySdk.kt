@@ -1,4 +1,4 @@
-package com.aboolean.safety
+package com.aboolean.usertype
 
 import android.annotation.SuppressLint
 import android.content.Context

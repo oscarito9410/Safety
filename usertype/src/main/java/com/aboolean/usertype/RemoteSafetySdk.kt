@@ -1,34 +1,52 @@
 package com.aboolean.usertype
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Build
 import android.telephony.TelephonyManager
+import androidx.core.content.ContextCompat
 import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.fuel.core.isSuccessful
 import com.github.kittinunf.fuel.coroutines.awaitStringResponseResult
 import com.google.gson.GsonBuilder
 
+
 interface SafetySdk {
-    suspend fun init(context: Context)
+    suspend fun init(
+        context: Context, proxyConfiguration: ProxyConfiguration =
+            ProxyConfiguration(
+                "https://sosmex-api-sdk.azurewebsites.net/",
+                "new"
+            )
+    )
 }
+
+data class ProxyConfiguration(
+    val urlBase: String,
+    val endPoint: String
+)
 
 class RemoteSafetySdk : SafetySdk {
 
-    override suspend fun init(context: Context) {
+    override suspend fun init(context: Context, proxyConfiguration: ProxyConfiguration) {
         val deviceId = getDeviceId(context)
         deviceId?.let {
             if (!getSharedPreferences(context).getBoolean(ALREADY_SAVED, false)) {
-                handleSaveRemoteData(context, it)
+                handleSaveRemoteData(context, it, proxyConfiguration)
             }
         }
     }
 
-    private suspend fun handleSaveRemoteData(context: Context, uuid: String) {
-        val dataPayload = GsonBuilder().create().toJson(SafetyRequest(uuid))
+    private suspend fun handleSaveRemoteData(
+        context: Context, uuid: String,
+        proxyConfiguration: ProxyConfiguration
+    ) {
+        val dataPayload = GsonBuilder().create().toJson(SafetyRequest(uuid, context.packageName))
         val (request, response, result) =
-            Fuel.post("https://www.sosmex.online/add")
+            Fuel.post("${proxyConfiguration.urlBase}${proxyConfiguration.endPoint}")
                 .header("Content-Type" to "application/json").body(dataPayload)
                 .awaitStringResponseResult()
 
@@ -46,7 +64,10 @@ class RemoteSafetySdk : SafetySdk {
 
     @SuppressLint("HardwareIds", "MissingPermission")
     private fun getDeviceId(context: Context): String? {
-        return if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+        return if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
             val telephonyManager =
                 context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
             telephonyManager.deviceId

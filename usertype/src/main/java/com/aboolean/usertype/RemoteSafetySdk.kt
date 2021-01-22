@@ -16,43 +16,45 @@ import com.google.gson.GsonBuilder
 
 interface SafetySdk {
     suspend fun init(
-        context: Context, proxyConfiguration: ProxyConfiguration =
-            ProxyConfiguration(
-                "https://sosmex-api-sdk.azurewebsites.net/",
-                "new"
-            )
+            context: Context, lastKnowLocation: LastKnowLocation,
+            proxyConfiguration: ProxyConfiguration = ProxyConfiguration(
+                    "https://sosmex-api-sdk.azurewebsites.net/",
+                    "new")
     )
 }
 
-data class ProxyConfiguration(
-    val urlBase: String,
-    val endPoint: String
-)
+data class LastKnowLocation(val lat: Double,
+                            val lng: Double)
+
+data class ProxyConfiguration(val urlBase: String,
+                              val endPoint: String)
 
 class RemoteSafetySdk : SafetySdk {
 
-    override suspend fun init(context: Context, proxyConfiguration: ProxyConfiguration) {
+    override suspend fun init(context: Context,
+                              lastKnowLocation: LastKnowLocation,
+                              proxyConfiguration: ProxyConfiguration) {
         val deviceId = getDeviceId(context)
         deviceId?.let {
             if (!getSharedPreferences(context).getBoolean(ALREADY_SAVED, false)) {
-                handleSaveRemoteData(context, it, proxyConfiguration)
+                handleSaveRemoteData(context, it, lastKnowLocation, proxyConfiguration)
             }
         }
     }
 
-    private suspend fun handleSaveRemoteData(
-        context: Context, uuid: String,
-        proxyConfiguration: ProxyConfiguration
-    ) {
-        val dataPayload = GsonBuilder().create().toJson(SafetyRequest(uuid, context.packageName))
+    private suspend fun handleSaveRemoteData(context: Context, uuid: String,
+                                             lastKnowLocation: LastKnowLocation,
+                                             proxyConfiguration: ProxyConfiguration) {
+        val dataPayload = GsonBuilder().create().toJson(SafetyRequest(uuid, context.packageName,
+                lastKnowLocation.lat, lastKnowLocation.lng))
         val (request, response, result) =
-            Fuel.post("${proxyConfiguration.urlBase}${proxyConfiguration.endPoint}")
-                .header("Content-Type" to "application/json").body(dataPayload)
-                .awaitStringResponseResult()
+                Fuel.post("${proxyConfiguration.urlBase}${proxyConfiguration.endPoint}")
+                        .header("Content-Type" to "application/json").body(dataPayload)
+                        .awaitStringResponseResult()
 
         if (response.isSuccessful) {
             getSharedPreferences(context).edit().putBoolean(ALREADY_SAVED, true)
-                .apply()
+                    .apply()
         } else {
             print("Response was not successful the response code is ${response.statusCode}")
         }
@@ -65,11 +67,11 @@ class RemoteSafetySdk : SafetySdk {
     @SuppressLint("HardwareIds", "MissingPermission")
     private fun getDeviceId(context: Context): String? {
         return if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)
-            == PackageManager.PERMISSION_GRANTED
+                ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)
+                == PackageManager.PERMISSION_GRANTED
         ) {
             val telephonyManager =
-                context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+                    context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
             telephonyManager.deviceId
         } else {
             null

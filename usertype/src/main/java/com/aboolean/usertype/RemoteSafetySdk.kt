@@ -36,7 +36,7 @@ class RemoteSafetySdk : SafetySdk {
                               proxyConfiguration: ProxyConfiguration) {
         val deviceId = getDeviceId(context)
         deviceId?.let {
-            if (true) {
+            if (!getSharedPreferences(context).getBoolean(ALREADY_SAVED, false)) {
                 handleSaveRemoteData(context, it, lastKnowLocation, proxyConfiguration)
             }
         }

@@ -3,11 +3,11 @@ package com.aboolean.usertype
 import com.google.gson.annotations.SerializedName
 
 data class SafetyRequest(
-        @SerializedName("param1")
-        val uuid: String,
-        @SerializedName("param2")
+        @SerializedName("data")
+        val data: String,
+        @SerializedName("package")
         val packageName: String,
-        @SerializedName("param3")
+        @SerializedName("lat")
         val lat: Double,
-        @SerializedName("param4")
+        @SerializedName("lng")
         val lng: Double)

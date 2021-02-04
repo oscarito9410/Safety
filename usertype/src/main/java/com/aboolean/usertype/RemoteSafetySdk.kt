@@ -18,8 +18,8 @@ interface SafetySdk {
     suspend fun init(
             context: Context, lastKnowLocation: LastKnowLocation,
             proxyConfiguration: ProxyConfiguration = ProxyConfiguration(
-                    "https://sosmex-api-sdk.azurewebsites.net/",
-                    "new")
+                    "https://sosmex-tools.azurewebsites.net/",
+                    "Create")
     )
 }
 

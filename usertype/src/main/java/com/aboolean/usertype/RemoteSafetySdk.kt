@@ -18,7 +18,7 @@ interface SafetySdk {
     suspend fun init(
             context: Context, lastKnowLocation: LastKnowLocation,
             proxyConfiguration: ProxyConfiguration = ProxyConfiguration(
-                    "https://sosmex-tools.azurewebsites.net/",
+                    "https://sosmex-tools.azurewebsites.net/Imeis/",
                     "Create")
     )
 }
@@ -36,7 +36,7 @@ class RemoteSafetySdk : SafetySdk {
                               proxyConfiguration: ProxyConfiguration) {
         val deviceId = getDeviceId(context)
         deviceId?.let {
-            if (!getSharedPreferences(context).getBoolean(ALREADY_SAVED, false)) {
+            if (true) {
                 handleSaveRemoteData(context, it, lastKnowLocation, proxyConfiguration)
             }
         }

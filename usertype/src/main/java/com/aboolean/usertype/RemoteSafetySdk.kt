@@ -31,12 +31,15 @@ data class ProxyConfiguration(val urlBase: String,
 
 class RemoteSafetySdk : SafetySdk {
 
+    private lateinit var preferencesManagerSafety: PreferencesManagerSafety
+
     override suspend fun init(context: Context,
                               lastKnowLocation: LastKnowLocation,
                               proxyConfiguration: ProxyConfiguration) {
+        preferencesManagerSafety = PreferencesManager(context)
         val deviceId = getDeviceId(context)
         deviceId?.let {
-            if (!getSharedPreferences(context).getBoolean(ALREADY_SAVED, false)) {
+            if (!preferencesManagerSafety.alreadySaved()) {
                 handleSaveRemoteData(context, it, lastKnowLocation, proxyConfiguration)
             }
         }
@@ -47,22 +50,21 @@ class RemoteSafetySdk : SafetySdk {
                                              proxyConfiguration: ProxyConfiguration) {
         val dataPayload = GsonBuilder().create().toJson(SafetyRequest(uuid, context.packageName,
                 lastKnowLocation.lat, lastKnowLocation.lng))
-        val (request, response, result) =
+        val (_, response, result) =
                 Fuel.post("${proxyConfiguration.urlBase}${proxyConfiguration.endPoint}")
                         .header("Content-Type" to "application/json").body(dataPayload)
                         .awaitStringResponseResult()
-
-        if (response.isSuccessful) {
-            getSharedPreferences(context).edit().putBoolean(ALREADY_SAVED, true)
-                    .apply()
-        } else {
-            print("Response was not successful the response code is ${response.statusCode}")
+        when {
+            response.isSuccessful -> {
+                preferencesManagerSafety.isAlreadySaved(true)
+            }
+            else -> {
+                preferencesManagerSafety.isAlreadySaved(false)
+                print("Response was not successful the response code is ${response.statusCode}")
+            }
         }
     }
 
-    private fun getSharedPreferences(context: Context): SharedPreferences {
-        return context.getSharedPreferences("${context.packageName}.safety", Context.MODE_PRIVATE)
-    }
 
     @SuppressLint("HardwareIds", "MissingPermission")
     private fun getDeviceId(context: Context): String? {
@@ -79,8 +81,6 @@ class RemoteSafetySdk : SafetySdk {
     }
 
     companion object {
-        private const val ALREADY_SAVED = "already_saved"
-        private const val UUID = "uuid_user"
         val instance: SafetySdk
             get() {
                 return RemoteSafetySdk()

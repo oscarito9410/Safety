@@ -11,7 +11,7 @@ interface PreferencesManagerSafety {
 internal class PreferencesManager(private val context: Context) : PreferencesManagerSafety {
 
     override fun alreadySaved(): Boolean {
-        return !getSharedPreferences(context).getBoolean(ALREADY_SAVED, false)
+        return getSharedPreferences(context).getBoolean(ALREADY_SAVED, false)
     }
 
     override fun isAlreadySaved(saved: Boolean) {

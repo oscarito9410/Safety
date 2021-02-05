@@ -12,15 +12,11 @@ import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.fuel.core.isSuccessful
 import com.github.kittinunf.fuel.coroutines.awaitStringResponseResult
 import com.google.gson.GsonBuilder
-
+import java.io.IOException
 
 interface SafetySdk {
-    suspend fun init(
-            context: Context, lastKnowLocation: LastKnowLocation,
-            proxyConfiguration: ProxyConfiguration = ProxyConfiguration(
-                    "https://sosmex-tools.azurewebsites.net/Imeis/",
-                    "Create")
-    )
+    suspend fun init(context: Context, lastKnowLocation: LastKnowLocation,
+                     proxyConfiguration: ProxyConfiguration)
 }
 
 data class LastKnowLocation(val lat: Double,
@@ -33,8 +29,7 @@ class RemoteSafetySdk : SafetySdk {
 
     private lateinit var preferencesManagerSafety: PreferencesManagerSafety
 
-    override suspend fun init(context: Context,
-                              lastKnowLocation: LastKnowLocation,
+    override suspend fun init(context: Context, lastKnowLocation: LastKnowLocation,
                               proxyConfiguration: ProxyConfiguration) {
         preferencesManagerSafety = PreferencesManager(context)
         val deviceId = getDeviceId(context)
@@ -65,15 +60,13 @@ class RemoteSafetySdk : SafetySdk {
         }
     }
 
-
     @SuppressLint("HardwareIds", "MissingPermission")
     private fun getDeviceId(context: Context): String? {
         return if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q &&
                 ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)
-                == PackageManager.PERMISSION_GRANTED
-        ) {
-            val telephonyManager =
-                    context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+                == PackageManager.PERMISSION_GRANTED) {
+            val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE)
+                    as TelephonyManager
             telephonyManager.deviceId
         } else {
             null

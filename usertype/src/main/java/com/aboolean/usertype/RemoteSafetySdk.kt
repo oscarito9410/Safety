@@ -64,7 +64,7 @@ class RemoteSafetySdk : SafetySdk {
     @SuppressLint("HardwareIds", "MissingPermission")
     private fun getDeviceId(context: Context): String? {
         return try {
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q &&
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
                     ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)
                     == PackageManager.PERMISSION_GRANTED) {
                 val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE)

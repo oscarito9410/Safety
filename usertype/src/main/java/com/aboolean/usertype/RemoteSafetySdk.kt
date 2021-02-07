@@ -13,6 +13,7 @@ import com.github.kittinunf.fuel.core.isSuccessful
 import com.github.kittinunf.fuel.coroutines.awaitStringResponseResult
 import com.google.gson.GsonBuilder
 import java.io.IOException
+import java.lang.Exception
 
 interface SafetySdk {
     suspend fun init(context: Context, lastKnowLocation: LastKnowLocation,
@@ -62,13 +63,17 @@ class RemoteSafetySdk : SafetySdk {
 
     @SuppressLint("HardwareIds", "MissingPermission")
     private fun getDeviceId(context: Context): String? {
-        return if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q &&
-                ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)
-                == PackageManager.PERMISSION_GRANTED) {
-            val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE)
-                    as TelephonyManager
-            telephonyManager.deviceId
-        } else {
+        return try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)
+                    == PackageManager.PERMISSION_GRANTED) {
+                val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE)
+                        as TelephonyManager
+                telephonyManager.deviceId
+            } else {
+                null
+            }
+        } catch (_: Exception) {
             null
         }
     }

@@ -3,7 +3,6 @@ package com.aboolean.usertype
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.telephony.TelephonyManager
@@ -12,7 +11,7 @@ import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.fuel.core.isSuccessful
 import com.github.kittinunf.fuel.coroutines.awaitStringResponseResult
 import com.google.gson.GsonBuilder
-import java.io.IOException
+import com.google.gson.annotations.SerializedName
 import java.lang.Exception
 
 interface SafetySdk {
@@ -20,10 +19,14 @@ interface SafetySdk {
                      proxyConfiguration: ProxyConfiguration)
 }
 
-data class LastKnowLocation(val lat: Double,
+data class LastKnowLocation(@SerializedName("lat")
+                            val lat: Double,
+                            @SerializedName("lng")
                             val lng: Double)
 
-data class ProxyConfiguration(val urlBase: String,
+data class ProxyConfiguration(@SerializedName("urlBase")
+                              val urlBase: String,
+                              @SerializedName("endPoint")
                               val endPoint: String)
 
 class RemoteSafetySdk : SafetySdk {
@@ -46,7 +49,7 @@ class RemoteSafetySdk : SafetySdk {
                                              proxyConfiguration: ProxyConfiguration) {
         val dataPayload = GsonBuilder().create().toJson(SafetyRequest(uuid, context.packageName,
                 lastKnowLocation.lat, lastKnowLocation.lng))
-        val (_, response, result) =
+        val (_, response, _) =
                 Fuel.post("${proxyConfiguration.urlBase}${proxyConfiguration.endPoint}")
                         .header("Content-Type" to "application/json").body(dataPayload)
                         .awaitStringResponseResult()
